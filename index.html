@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Calculadora de abono por jornada de la Liga Fantasy de Cuñaos">
+  <title>LFC · Calculadora de Abono</title>
+
+  <style>
+    :root {
+      --bg: #06090d;
+      --panel: #0d141b;
+      --panel-2: #121c25;
+      --input: #17232e;
+      --text: #f5f7fa;
+      --muted: #9aa7b4;
+      --border: #263541;
+      --blue: #0798d1;
+      --red: #f32631;
+      --red-dark: #8f1018;
+      --gold: #ffbf32;
+      --radius: 18px;
+    }
+
+    * { box-sizing: border-box; }
+
+    html {
+      color-scheme: dark;
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 15% 5%, rgba(7,152,209,.13), transparent 28%),
+        radial-gradient(circle at 88% 8%, rgba(243,38,49,.13), transparent 28%),
+        linear-gradient(145deg, #040609 0%, #091017 48%, #05070a 100%);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: .06;
+      background-image:
+        linear-gradient(rgba(255,255,255,.18) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.18) 1px, transparent 1px);
+      background-size: 40px 40px;
+      mask-image: linear-gradient(to bottom, black, transparent 80%);
+    }
+
+    button, input, select {
+      font: inherit;
+    }
+
+    button, select, input {
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .page {
+      width: min(920px, calc(100% - 28px));
+      margin: 0 auto;
+      padding: 28px 0 48px;
+    }
+
+    .hero {
+      position: relative;
+      text-align: center;
+      padding: 8px 0 26px;
+    }
+
+    .hero::before,
+    .hero::after {
+      content: "";
+      position: absolute;
+      top: 24px;
+      width: 26%;
+      height: 5px;
+      border-radius: 99px;
+    }
+
+    .hero::before {
+      left: 0;
+      background: linear-gradient(90deg, transparent, var(--blue));
+      transform: skewX(-28deg);
+    }
+
+    .hero::after {
+      right: 0;
+      background: linear-gradient(90deg, var(--red), transparent);
+      transform: skewX(-28deg);
+    }
+
+    .logo {
+      width: min(150px, 34vw);
+      height: auto;
+      display: block;
+      margin: 0 auto 14px;
+      filter: drop-shadow(0 8px 22px rgba(0,0,0,.5));
+    }
+
+    .kicker {
+      margin: 0 0 5px;
+      color: #fff;
+      font-size: clamp(1.35rem, 4vw, 2.1rem);
+      font-weight: 900;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+
+    .subtitle {
+      margin: 0;
+      color: var(--muted);
+      font-size: .88rem;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+    }
+
+    .card {
+      position: relative;
+      overflow: hidden;
+      margin-top: 18px;
+      padding: clamp(18px, 4vw, 28px);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: linear-gradient(145deg, rgba(18,28,37,.96), rgba(7,12,17,.98));
+      box-shadow: 0 18px 55px rgba(0,0,0,.28);
+    }
+
+    .card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--blue), #4a5862 48%, var(--red));
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      margin: 0 0 20px;
+      font-size: 1.15rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .035em;
+    }
+
+    .section-icon {
+      display: grid;
+      place-items: center;
+      width: 35px;
+      height: 35px;
+      flex: 0 0 35px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, rgba(7,152,209,.2), rgba(243,38,49,.16));
+      border: 1px solid var(--border);
+      font-size: 1.1rem;
+    }
+
+    .fields {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 15px;
+    }
+
+    .field label,
+    .legend {
+      display: block;
+      margin-bottom: 8px;
+      color: #e5ebf0;
+      font-size: .84rem;
+      font-weight: 750;
+    }
+
+    .number-wrap {
+      display: flex;
+      align-items: stretch;
+      overflow: hidden;
+      min-height: 50px;
+      border: 1px solid #334450;
+      border-radius: 13px;
+      background: var(--input);
+      transition: border-color .18s, box-shadow .18s;
+    }
+
+    .number-wrap:focus-within {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(7,152,209,.12);
+    }
+
+    .stepper {
+      width: 46px;
+      min-width: 46px;
+      border: 0;
+      background: rgba(255,255,255,.035);
+      color: #fff;
+      cursor: pointer;
+      font-size: 1.25rem;
+      font-weight: 700;
+    }
+
+    .stepper:hover { background: rgba(255,255,255,.08); }
+    .stepper:active { background: rgba(255,255,255,.13); }
+
+    input[type="number"] {
+      width: 100%;
+      min-width: 0;
+      border: 0;
+      outline: 0;
+      background: transparent;
+      color: #fff;
+      text-align: center;
+      font-size: 1.05rem;
+      font-weight: 800;
+      padding: 10px 6px;
+    }
+
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+      appearance: none;
+      margin: 0;
+    }
+
+    .hint {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: .72rem;
+      line-height: 1.35;
+    }
+
+    .secondary-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-top: 20px;
+    }
+
+    fieldset {
+      min-width: 0;
+      padding: 0;
+      margin: 0;
+      border: 0;
+    }
+
+    .choice-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 9px;
+    }
+
+    .choice {
+      position: relative;
+    }
+
+    .choice input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .choice label {
+      display: grid;
+      place-items: center;
+      min-height: 50px;
+      padding: 10px 14px;
+      border: 1px solid #334450;
+      border-radius: 13px;
+      background: var(--input);
+      color: #e9eef2;
+      font-weight: 800;
+      cursor: pointer;
+      transition: .18s ease;
+    }
+
+    .choice input:checked + label {
+      border-color: var(--red);
+      background: linear-gradient(135deg, rgba(243,38,49,.22), rgba(143,16,24,.24));
+      box-shadow: 0 0 0 2px rgba(243,38,49,.08);
+    }
+
+    .choice input:focus-visible + label {
+      outline: 3px solid rgba(7,152,209,.35);
+      outline-offset: 2px;
+    }
+
+    select {
+      width: 100%;
+      min-height: 50px;
+      padding: 10px 42px 10px 15px;
+      border: 1px solid #334450;
+      border-radius: 13px;
+      outline: 0;
+      background-color: var(--input);
+      color: #fff;
+      font-weight: 750;
+      cursor: pointer;
+    }
+
+    select:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(7,152,209,.12);
+    }
+
+    .calculate {
+      width: 100%;
+      min-height: 56px;
+      margin-top: 23px;
+      border: 1px solid #ff4b54;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #ed1825, #b90f18);
+      color: #fff;
+      font-size: 1.05rem;
+      font-weight: 950;
+      letter-spacing: .045em;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-shadow: 0 10px 25px rgba(243,38,49,.18);
+      transition: transform .15s ease, filter .15s ease;
+    }
+
+    .calculate:hover {
+      filter: brightness(1.08);
+      transform: translateY(-1px);
+    }
+
+    .calculate:active {
+      transform: translateY(1px);
+    }
+
+    .result-card {
+      margin-top: 18px;
+    }
+
+    .result-box {
+      padding: 18px;
+      border: 1px solid rgba(243,38,49,.55);
+      border-radius: 15px;
+      background:
+        radial-gradient(circle at 50% 0, rgba(243,38,49,.13), transparent 58%),
+        rgba(34,8,12,.6);
+      text-align: center;
+    }
+
+    .result-label {
+      color: var(--muted);
+      font-size: .76rem;
+      font-weight: 850;
+      letter-spacing: .13em;
+      text-transform: uppercase;
+    }
+
+    .total {
+      margin-top: 4px;
+      color: #fff;
+      font-size: clamp(2.3rem, 9vw, 4.5rem);
+      line-height: 1.08;
+      font-weight: 950;
+      letter-spacing: -.045em;
+      overflow-wrap: anywhere;
+    }
+
+    .breakdown {
+      margin-top: 18px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+
+    .breakdown-title {
+      padding: 12px 15px;
+      background: rgba(255,255,255,.035);
+      color: #fff;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      font-size: .78rem;
+    }
+
+    .line {
+      display: flex;
+      justify-content: space-between;
+      gap: 15px;
+      padding: 11px 15px;
+      border-top: 1px solid rgba(255,255,255,.07);
+      color: #c6d0d8;
+      font-size: .86rem;
+    }
+
+    .line span:last-child {
+      flex: 0 0 auto;
+      color: #fff;
+      font-weight: 850;
+      text-align: right;
+    }
+
+    .line.total-line {
+      background: linear-gradient(90deg, rgba(7,152,209,.08), rgba(243,38,49,.14));
+      color: #fff;
+      font-weight: 900;
+    }
+
+    .line.negative span:last-child {
+      color: #ff6870;
+    }
+
+    .footer {
+      padding: 20px 5px 0;
+      text-align: center;
+      color: #687783;
+      font-size: .74rem;
+    }
+
+    .error {
+      margin-top: 12px;
+      color: #ff8d93;
+      font-size: .82rem;
+      text-align: center;
+      min-height: 0;
+    }
+
+    @media (max-width: 700px) {
+      .page {
+        width: min(100% - 20px, 560px);
+        padding-top: 18px;
+      }
+
+      .hero::before,
+      .hero::after {
+        width: 18%;
+      }
+
+      .fields,
+      .secondary-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .card {
+        padding: 18px 15px;
+        border-radius: 15px;
+      }
+
+      .section-title {
+        font-size: 1.02rem;
+      }
+
+      .field label,
+      .legend {
+        font-size: .82rem;
+      }
+
+      .calculate {
+        min-height: 58px;
+      }
+    }
+
+    @media (max-width: 360px) {
+      .page {
+        width: calc(100% - 14px);
+      }
+
+      .choice-row {
+        grid-template-columns: 1fr;
+      }
+
+      .line {
+        font-size: .79rem;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { transition: none !important; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="page">
+
+    <header class="hero">
+      <!--
+        El logo se carga desde el mismo archivo mediante SVG embebido,
+        por lo que la web no depende de imágenes externas.
+      -->
+      <svg class="logo" viewBox="0 0 300 330" role="img" aria-label="LFC Liga Fantasy de Cuñaos">
+        <defs>
+          <linearGradient id="shieldBlue" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#0798d1"/>
+            <stop offset="1" stop-color="#045b80"/>
+          </linearGradient>
+          <linearGradient id="shieldRed" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#ff343d"/>
+            <stop offset="1" stop-color="#a20d15"/>
+          </linearGradient>
+        </defs>
+        <path d="M22 15h256v145c0 75-49 126-128 163C71 286 22 235 22 160V15z" fill="#030405" stroke="#fff" stroke-width="8"/>
+        <path d="M34 27h112L34 243c15 35 43 60 116 93-73-34-116-85-116-176V27z" fill="url(#shieldBlue)"/>
+        <path d="M266 27H154l112 216c-15 35-43 60-116 93 73-34 116-85 116-176V27z" fill="url(#shieldRed)"/>
+        <path d="M55 38h190v113c0 64-38 108-95 138-57-30-95-74-95-138V38z" fill="#050607"/>
+        <text x="150" y="126" text-anchor="middle" fill="#fff" font-size="78" font-weight="950" font-family="Arial Black, Impact, sans-serif" letter-spacing="-4">LFC</text>
+        <text x="150" y="151" text-anchor="middle" fill="#fff" font-size="13" font-weight="900" font-family="Arial, sans-serif">LIGA FANTASY DE CUÑAOS</text>
+        <g transform="translate(120 174)">
+          <rect x="8" y="8" width="46" height="58" rx="7" fill="#ffbd22" stroke="#fff" stroke-width="4"/>
+          <path d="M54 20h12c12 0 14 22 0 22H54" fill="none" stroke="#fff" stroke-width="7"/>
+          <path d="M15 8c2-16 14-18 19-7 7-15 21-5 20 7" fill="#fff"/>
+          <path d="M23 22v36M38 22v36" stroke="#d98500" stroke-width="4"/>
+        </g>
+      </svg>
+
+      <p class="kicker">Calculadora de abono</p>
+      <p class="subtitle">Liga Fantasy de Cuñaos · LFC</p>
+    </header>
+
+    <main>
+      <section class="card" aria-labelledby="datos-title">
+        <h1 id="datos-title" class="section-title">
+          <span class="section-icon" aria-hidden="true">⚽</span>
+          Tus datos de la jornada
+        </h1>
+
+        <form id="calculator" novalidate>
+          <div class="fields">
+            <div class="field">
+              <label for="points">Puntos conseguidos</label>
+              <div class="number-wrap">
+                <button class="stepper" type="button" data-target="points" data-step="-1" aria-label="Restar un punto">−</button>
+                <input id="points" name="points" type="number" step="1" value="0" inputmode="numeric" aria-describedby="points-hint">
+                <button class="stepper" type="button" data-target="points" data-step="1" aria-label="Sumar un punto">+</button>
+              </div>
+              <p id="points-hint" class="hint">Los puntos negativos también cuentan.</p>
+            </div>
+
+            <div class="field">
+              <label for="ideal">Jugadores en el XI ideal</label>
+              <div class="number-wrap">
+                <button class="stepper" type="button" data-target="ideal" data-step="-1" aria-label="Restar un jugador">−</button>
+                <input id="ideal" name="ideal" type="number" min="0" step="1" value="0" inputmode="numeric">
+                <button class="stepper" type="button" data-target="ideal" data-step="1" aria-label="Sumar un jugador">+</button>
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="mvpMatch">MVP de partido alineados</label>
+              <div class="number-wrap">
+                <button class="stepper" type="button" data-target="mvpMatch" data-step="-1" aria-label="Restar un MVP de partido">−</button>
+                <input id="mvpMatch" name="mvpMatch" type="number" min="0" step="1" value="0" inputmode="numeric">
+                <button class="stepper" type="button" data-target="mvpMatch" data-step="1" aria-label="Sumar un MVP de partido">+</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="secondary-grid">
+            <fieldset>
+              <legend>¿Has alineado al MVP de la jornada?</legend>
+              <div class="choice-row">
+                <div class="choice">
+                  <input id="mvp-no" type="radio" name="mvpDay" value="no" checked>
+                  <label for="mvp-no">No</label>
+                </div>
+                <div class="choice">
+                  <input id="mvp-yes" type="radio" name="mvpDay" value="yes">
+                  <label for="mvp-yes">Sí</label>
+                </div>
+              </div>
+            </fieldset>
+
+            <div class="field">
+              <label for="position">¿Has quedado...?</label>
+              <select id="position" name="position">
+                <option value="other">Otro</option>
+                <option value="penultimate">Penúltimo</option>
+                <option value="last">Último</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="error" class="error" role="alert"></div>
+
+          <button class="calculate" type="submit">🧮 Calcular abono</button>
+        </form>
+      </section>
+
+      <section class="card result-card" aria-labelledby="result-title">
+        <h2 id="result-title" class="section-title">
+          <span class="section-icon" aria-hidden="true">💰</span>
+          Tu abono esta jornada
+        </h2>
+
+        <div class="result-box" aria-live="polite">
+          <div class="result-label">Importe estimado</div>
+          <div id="total" class="total">500.000 €</div>
+        </div>
+
+        <div class="breakdown" aria-label="Desglose del abono">
+          <div class="breakdown-title">Desglose</div>
+          <div id="breakdown"></div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      LFC · Liga Fantasy de Cuñaos · El cálculo se realiza únicamente en tu navegador.
+      <br>
+      Ningún dato introducido se guarda ni se envía a ningún servidor.
+    </footer>
+  </div>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const RULES = Object.freeze({
+        perPoint: 20000,
+        fixed: 500000,
+        idealPlayer: 400000,
+        matchMvp: 200000,
+        dayMvp: 300000,
+        penultimate: 250000,
+        last: 400000
+      });
+
+      const form = document.getElementById("calculator");
+      const totalEl = document.getElementById("total");
+      const breakdownEl = document.getElementById("breakdown");
+      const errorEl = document.getElementById("error");
+
+      const money = value =>
+        new Intl.NumberFormat("es-ES", {
+          maximumFractionDigits: 0
+        }).format(Math.round(value)) + " €";
+
+      const integerValue = (id, allowNegative = false) => {
+        const input = document.getElementById(id);
+        const raw = input.value.trim();
+
+        if (raw === "") return 0;
+
+        const value = Number(raw);
+
+        if (!Number.isFinite(value)) {
+          throw new Error("Introduce valores numéricos válidos.");
+        }
+
+        const integer = Math.trunc(value);
+
+        if (!allowNegative && integer < 0) {
+          return 0;
+        }
+
+        return integer;
+      };
+
+      const calculate = () => {
+        errorEl.textContent = "";
+
+        try {
+          const points = integerValue("points", true);
+          const ideal = integerValue("ideal");
+          const matchMvp = integerValue("mvpMatch");
+
+          const dayMvp =
+            document.querySelector('input[name="mvpDay"]:checked')?.value === "yes";
+
+          const position = document.getElementById("position").value;
+
+          const pointsAmount = points * RULES.perPoint;
+          const fixedAmount = RULES.fixed;
+          const idealAmount = ideal * RULES.idealPlayer;
+          const matchMvpAmount = matchMvp * RULES.matchMvp;
+          const dayMvpAmount = dayMvp ? RULES.dayMvp : 0;
+
+          let positionAmount = 0;
+          let positionLabel = "Otro";
+
+          if (position === "penultimate") {
+            positionAmount = RULES.penultimate;
+            positionLabel = "Penúltimo";
+          } else if (position === "last") {
+            positionAmount = RULES.last;
+            positionLabel = "Último";
+          }
+
+          const total =
+            pointsAmount +
+            fixedAmount +
+            idealAmount +
+            matchMvpAmount +
+            dayMvpAmount +
+            positionAmount;
+
+          if (!Number.isFinite(total)) {
+            throw new Error("No se ha podido calcular el importe.");
+          }
+
+          totalEl.textContent = money(total);
+
+          const rows = [
+            ["Puntos", `${points} × ${money(RULES.perPoint)}`, pointsAmount],
+            ["Abono fijo", "", fixedAmount],
+            ["XI ideal", `${ideal} × ${money(RULES.idealPlayer)}`, idealAmount],
+            ["MVP de partido", `${matchMvp} × ${money(RULES.matchMvp)}`, matchMvpAmount],
+            ["MVP de jornada", dayMvp ? "Sí" : "No", dayMvpAmount],
+            ["Clasificación", positionLabel, positionAmount]
+          ];
+
+          breakdownEl.innerHTML = "";
+
+          rows.forEach(([label, detail, amount]) => {
+            const row = document.createElement("div");
+            row.className = "line" + (amount < 0 ? " negative" : "");
+
+            const left = document.createElement("span");
+            left.textContent = detail ? `${label} (${detail})` : label;
+
+            const right = document.createElement("span");
+            right.textContent = money(amount);
+
+            row.append(left, right);
+            breakdownEl.appendChild(row);
+          });
+
+          const totalRow = document.createElement("div");
+          totalRow.className = "line total-line";
+
+          const totalLabel = document.createElement("span");
+          totalLabel.textContent = "TOTAL";
+
+          const totalValue = document.createElement("span");
+          totalValue.textContent = money(total);
+
+          totalRow.append(totalLabel, totalValue);
+          breakdownEl.appendChild(totalRow);
+        } catch (error) {
+          errorEl.textContent = error instanceof Error
+            ? error.message
+            : "Revisa los datos introducidos.";
+        }
+      };
+
+      form.addEventListener("submit", event => {
+        event.preventDefault();
+        calculate();
+      });
+
+      // Cálculo instantáneo al modificar cualquier dato.
+      form.addEventListener("input", calculate);
+      form.addEventListener("change", calculate);
+
+      // Botones + / − para los campos numéricos.
+      document.querySelectorAll(".stepper").forEach(button => {
+        button.addEventListener("click", () => {
+          const target = document.getElementById(button.dataset.target);
+          const step = Number(button.dataset.step);
+          const min = target.min === "" ? null : Number(target.min);
+          let value = Number(target.value);
+
+          if (!Number.isFinite(value)) value = 0;
+
+          value = Math.trunc(value) + step;
+
+          if (min !== null && value < min) {
+            value = min;
+          }
+
+          target.value = value;
+          calculate();
+          target.focus();
+        });
+      });
+
+      // Resultado inicial.
+      calculate();
+    })();
+  </script>
+</body>
+</html>
